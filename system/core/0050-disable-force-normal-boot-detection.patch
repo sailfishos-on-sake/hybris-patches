@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vlad G <b100dian@gmail.com>
+Date: Wed, 26 Apr 2023 22:57:03 +0300
+Subject: [PATCH] disable normal boot check
+
+Change-Id: I198861ed1b0e7440891fe3d745dc2944af70ab83
+
+diff --git a/init/first_stage_init.cpp b/init/first_stage_init.cpp
+index 4eb172431..822c85170 100644
+--- a/init/first_stage_init.cpp
++++ b/init/first_stage_init.cpp
+@@ -280,6 +280,7 @@ int FirstStageMain(int argc, char** argv) {
+         StartConsole();
+     }
+
++#ifdef DISABLED_FOR_HYBRIS_SUPPORT
+     if (ForceNormalBoot(cmdline)) {
+         mkdir("/first_stage_ramdisk", 0755);
+         // SwitchRoot() must be called with a mount point as the target, so we bind mount the
+@@ -289,6 +290,7 @@ int FirstStageMain(int argc, char** argv) {
+         }
+         SwitchRoot("/first_stage_ramdisk");
+     }
++#endif
+
+     // If this file is present, the second-stage init will use a userdebug sepolicy
+     // and load adb_debug.prop to allow adb root, if the device is unlocked.
