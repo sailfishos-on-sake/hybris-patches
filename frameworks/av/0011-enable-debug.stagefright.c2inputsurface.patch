@@ -1,0 +1,46 @@
+commit ef9581121aa3d3c32383fe6a44d243765807d33d
+Author: Harish Mahendrakar <harish.mahendrakar@ittiam.com>
+Date:   Wed Apr 21 17:20:39 2021 -0700
+
+    Codec2Buffer: Update 64bit check in asC2Buffer
+    
+    In case of devices which support both 64bit and 32bit builds,
+    GraphicMetadataBuffer will return an error in 64bit builds only if
+    debug.stagefright.c2inputsurface is set to 0.
+    
+    Bug: 169303746
+    Related-Bug: 178228919
+    Test: atest CtsMediaV2TestCases
+    
+    Change-Id: I98a96bad02930947bee40e09ae4d42e684981421
+
+diff --git a/media/codec2/sfplugin/Codec2Buffer.cpp b/media/codec2/sfplugin/Codec2Buffer.cpp
+index 507232385a..7a07f43538 100644
+--- a/media/codec2/sfplugin/Codec2Buffer.cpp
++++ b/media/codec2/sfplugin/Codec2Buffer.cpp
+@@ -583,17 +583,20 @@ GraphicMetadataBuffer::GraphicMetadataBuffer(
+ std::shared_ptr<C2Buffer> GraphicMetadataBuffer::asC2Buffer() {
+ #ifdef __LP64__
+     static std::once_flag s_checkOnce;
+-    static bool s_64bitonly {false};
++    static bool s_is64bitOk {true};
+     std::call_once(s_checkOnce, [&](){
+         const std::string abi32list =
+         ::android::base::GetProperty("ro.product.cpu.abilist32", "");
+-        if (abi32list.empty()) {
+-            s_64bitonly = true;
++        if (!abi32list.empty()) {
++            int32_t inputSurfaceSetting =
++            ::android::base::GetIntProperty("debug.stagefright.c2inputsurface", int32_t(0));
++            s_is64bitOk = inputSurfaceSetting != 0;
+         }
+     });
+ 
+-    if (!s_64bitonly) {
+-        ALOGE("GraphicMetadataBuffer does not work in 32+64 system if compiled as 64-bit object");
++    if (!s_is64bitOk) {
++        ALOGE("GraphicMetadataBuffer does not work in 32+64 system if compiled as 64-bit object"\
++              "when debug.stagefright.c2inputsurface is set to 0");
+         return nullptr;
+     }
+ #endif
